@@ -70,60 +70,46 @@ Then restart the bot normally (`start.bat` or `bash start.sh`). Your credentials
 
 ## Run in the Background
 
-### Linux / VPS — keep running after closing the terminal
+### Linux / VPS — recommended: pm2
 
-**Option 1 — screen (recommended, lets you reconnect later):**
+pm2 keeps the bot running 24/7, auto-restarts if it crashes, and survives terminal disconnects.
+
+**Install pm2:**
 ```bash
-screen -S polymirror
-bash start.sh
-# Detach with Ctrl+A then D
-# Reconnect later with: screen -r polymirror
+sudo apt-get install -y nodejs npm
+npm install -g pm2
 ```
 
-**Option 2 — nohup (simple, runs silently):**
+**Start the bot:**
 ```bash
-nohup bash start.sh > polymirror.log 2>&1 &
-echo "Bot PID: $!"
-# View logs: tail -f polymirror.log
-# Stop: kill <PID>
+cd ~/polymirror-copy-bot
+pm2 start venv/bin/python --name polymirror -- run_dashboard.py
 ```
 
-**Option 3 — systemd (auto-starts on reboot):**
+**Auto-start on VPS reboot:**
 ```bash
-sudo nano /etc/systemd/system/polymirror.service
+pm2 save
+pm2 startup
 ```
-Paste this (replace `/home/ubuntu` with your home directory):
-```ini
-[Unit]
-Description=PolyMirror Copy Trading Bot
-After=network.target
+Copy and run the command it shows (starts with `sudo env PATH=...`)
 
-[Service]
-User=ubuntu
-WorkingDirectory=/home/ubuntu/polymirror-copy-bot
-ExecStart=/home/ubuntu/polymirror-copy-bot/venv/bin/python run_dashboard.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-Then enable it:
+**Useful pm2 commands:**
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable polymirror
-sudo systemctl start polymirror
-# Check status: sudo systemctl status polymirror
-# View logs:    sudo journalctl -u polymirror -f
+pm2 status              # check if running
+pm2 logs polymirror     # view live logs
+pm2 restart polymirror  # restart the bot
+pm2 stop polymirror     # stop the bot
 ```
+
+---
 
 ### Windows — keep running after closing the window
 
-**Option 1 — minimize to tray:**
-Double-click `start.bat` normally. Minimize the window. The bot keeps running.
+**Option 1 — minimize the window:**
+Double-click `start.bat`. Minimize the window. The bot keeps running.
 
-**Option 2 — run hidden at Windows startup:**
-Press `Win+R`, type `shell:startup`, press Enter. Create a shortcut to `start.bat` in that folder. The bot will start automatically when Windows boots, with no visible window.
+**Option 2 — auto-start with Windows:**
+Press `Win+R`, type `shell:startup`, press Enter. Create a shortcut to `start.bat` in that folder. The bot starts automatically when Windows boots.
 
 ---
 
