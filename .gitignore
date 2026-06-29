@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+.venv/
+
+# Database (contains real trading data)
+data/*.sqlite
+data/*.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment (client fills this — not ignored, ships as template)
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
