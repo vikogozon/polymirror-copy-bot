@@ -1,71 +1,65 @@
-# CopyPoly Single Wallet Copier
+# PolyMirror — Polymarket Copy Trading Bot
 
-Bot minimo para copiar una sola wallet de Polymarket:
+![PolyMirror Dashboard](preview.png)
 
-```text
-0x204f72f35326db932158cba6adff0b9a1da95e14
+Automatically copy trades from any Polymarket wallet in real time. Configure everything from the browser dashboard — no config files, no terminal commands after setup.
+
+---
+
+## Installation
+
+### Windows
+
+1. Install **Python 3.11+** from [python.org](https://www.python.org/downloads/) — check **"Add Python to PATH"** during install
+2. Download or clone this repository
+3. Open a terminal in the folder and run:
+   ```
+   python install.py
+   ```
+4. Double-click **`start.bat`** to launch the bot
+5. Open your browser at **http://localhost:8080**
+
+### Linux / VPS
+
+```bash
+git clone https://github.com/vikogozon/polymirror-copy-bot.git
+cd polymirror-copy-bot
+python3 install.py
+bash start.sh
 ```
 
-## Comandos
+Then open your browser at **http://localhost:8080**
 
-Chequeo live sin enviar orden:
+### Mac
 
-```powershell
-python -m copypoly.cli live-check
+```bash
+git clone https://github.com/vikogozon/polymirror-copy-bot.git
+cd polymirror-copy-bot
+python3 install.py
+bash start.sh
 ```
 
-Ver posiciones locales copiadas:
+Then open your browser at **http://localhost:8080**
 
-```powershell
-python -m copypoly.cli paper-status
-```
+---
 
-Una sola vuelta:
+## First Time Setup
 
-```powershell
-python -u -m copypoly.cli copy-wallet --once
-```
+1. **Activate your license** — paste your license key and click ACTIVATE
+2. **Enter your Polymarket credentials** — private key, API key, and the wallet address you want to copy
+3. **Set your trade size** — fixed USDC amount per trade or percentage of capital
+4. **Click START** — the bot begins copying trades in real time
 
-Bot continuo:
+Everything is configured directly from the dashboard. No need to edit any files.
 
-```powershell
-python -u -m copypoly.cli copy-wallet
-```
+---
 
-`python -u -m copypoly.cli run` es alias del mismo copiador.
+## Requirements
 
-## Configuracion
+- Python 3.11 or higher
+- A funded Polymarket account (wallet-based, not email sign-up)
+- A valid PolyMirror license key
 
-La configuracion vive en `.env`.
+---
 
-Las variables principales son:
-
-```text
-MODE=live
-WATCHLIST_WALLETS=0x204f72f35326db932158cba6adff0b9a1da95e14
-START_AFTER_TIMESTAMP=...
-MAX_MARKET_USDC=5
-POSITION_PERCENT=0.01
-```
-
-Para empezar desde cero, actualiza `START_AFTER_TIMESTAMP` al momento actual antes de arrancar.
-
-## Modo sin limites de copia
-
-La configuracion live actual copia cada BUY/SELL nuevo del trader sin limites
-de presupuesto, mercado, numero de compras, antiguedad ni proteccion de precio:
-
-```text
-TRADE_LOOKBACK_SECONDS=0
-BLOCK_OPPOSITE_BUYS=false
-MAX_TRADE_USDC=0
-MAX_MARKET_USDC=0
-MAX_MARKET_BUYS=0
-MAX_TOTAL_OPEN_USDC=0
-MAX_OPEN_POSITIONS=0
-DAILY_MAX_USDC=0
-ENFORCE_LIVE_PRICE_PROTECTION=false
-```
-
-`0` significa sin limite. Todavia pueden impedir una orden el saldo insuficiente,
-la falta de liquidez, el minimo del mercado o un error/restriccion de Polymarket.
+> Trading on prediction markets involves risk of loss. Always test with small amounts first.
