@@ -9,11 +9,9 @@ from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
 
-# Polymarket trading contracts on Polygon mainnet
 _CTF_EXCHANGE  = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E"
 _NEG_RISK_ADDR = "0xC5d563A36AE78145C45a50134d48A1215220f80a"
 
-# Public Polygon WebSocket RPC endpoints (no API key needed)
 _ENDPOINTS = [
     "wss://polygon-bor-rpc.publicnode.com",
     "wss://polygon.drpc.org",
@@ -26,7 +24,6 @@ def start_watcher(
     stop: threading.Event,
     on_connected: Optional[Callable[[str], None]] = None,
 ) -> threading.Thread:
-    """Start background thread that listens for on-chain trades from wallet."""
     t = threading.Thread(
         target=_run,
         args=(wallet.lower(), on_trade, stop, on_connected),
@@ -90,37 +87,34 @@ async def _listen(
         stop.wait()
         return
 
-    try:
-        connect = websockets.connect
-    except AttributeError:
-        connect = websockets.legacy.client.connect
+    # Python 3.14 guaranteed — asyncio.timeout available
+    async with asyncio.timeout(10):
+        async with websockets.connect(url, ping_interval=20) as ws:
+            await ws.send(json.dumps({
+                "jsonrpc": "2.0", "id": 1,
+                "method": "eth_subscribe",
+                "params": ["logs", {"address": [_CTF_EXCHANGE, _NEG_RISK_ADDR]}],
+            }))
+            resp = json.loads(await asyncio.wait_for(ws.recv(), timeout=10))
+            if "error" in resp:
+                raise RuntimeError(f"Subscribe failed: {resp['error']}")
 
-    async with connect(url, ping_interval=20, open_timeout=10) as ws:
-        await ws.send(json.dumps({
-            "jsonrpc": "2.0", "id": 1,
-            "method": "eth_subscribe",
-            "params": ["logs", {"address": [_CTF_EXCHANGE, _NEG_RISK_ADDR]}],
-        }))
-        resp = json.loads(await asyncio.wait_for(ws.recv(), timeout=10))
-        if "error" in resp:
-            raise RuntimeError(f"Subscribe failed: {resp['error']}")
+            node = url.split("/")[2]
+            log.info(f"Blockchain watcher connected ({node})")
+            if on_connected:
+                on_connected(node)
 
-        node = url.split("/")[2]
-        log.info(f"Blockchain watcher connected ({node})")
-        if on_connected:
-            on_connected(node)
-
-        while not stop.is_set():
-            try:
-                raw = await asyncio.wait_for(ws.recv(), timeout=1.0)
-            except asyncio.TimeoutError:
-                continue
-            try:
-                data   = json.loads(raw)
-                result = data.get("params", {}).get("result", {})
-                topics = result.get("topics", [])
-                if any(padded_wallet in t.lower() for t in topics):
-                    log.debug("On-chain trade detected — waking bot")
-                    on_trade()
-            except Exception:
-                pass
+            while not stop.is_set():
+                try:
+                    raw = await asyncio.wait_for(ws.recv(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
+                try:
+                    data   = json.loads(raw)
+                    result = data.get("params", {}).get("result", {})
+                    topics = result.get("topics", [])
+                    if any(padded_wallet in t.lower() for t in topics):
+                        log.debug("On-chain trade detected — waking bot")
+                        on_trade()
+                except Exception:
+                    pass
