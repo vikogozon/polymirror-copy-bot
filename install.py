@@ -9,6 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 VENV = ROOT / "venv"
 
+_PY_MAJOR = 3
+_PY_MINOR = 14   # PyArmor runtime requires Python 3.14+
+
 
 def run(cmd, **kw):
     print(f"  > {' '.join(str(c) for c in cmd)}")
@@ -18,49 +21,49 @@ def run(cmd, **kw):
         sys.exit(result.returncode)
 
 
-def _install_python313_linux():
-    print("\n  Python 3.13 not found. Installing automatically...")
+def _install_python_linux():
+    py = f"python{_PY_MAJOR}.{_PY_MINOR}"
+    print(f"\n  {py} not found. Installing automatically...")
     cmds = [
         ["sudo", "apt-get", "install", "-y", "software-properties-common"],
         ["sudo", "add-apt-repository", "ppa:deadsnakes/ppa", "-y"],
         ["sudo", "apt-get", "update", "-q"],
-        ["sudo", "apt-get", "install", "-y", "python3.13", "python3.13-venv"],
+        ["sudo", "apt-get", "install", "-y", py, f"{py}-venv"],
     ]
     for cmd in cmds:
         result = subprocess.run(cmd)
         if result.returncode != 0:
-            print(f"\n[ERROR] Failed to install Python 3.13 automatically.")
+            print(f"\n[ERROR] Failed to install {py} automatically.")
             print("  Try running manually:")
             print("      sudo apt-get install -y software-properties-common")
-            print("      sudo add-apt-repository ppa:deadsnakes/ppa -y")
-            print("      sudo apt-get update -q")
-            print("      sudo apt-get install -y python3.13 python3.13-venv")
-            print("      python3.13 install.py")
+            print(f"      sudo add-apt-repository ppa:deadsnakes/ppa -y")
+            print(f"      sudo apt-get update -q")
+            print(f"      sudo apt-get install -y {py} {py}-venv")
+            print(f"      {py} install.py")
             sys.exit(1)
-    print("\n  Python 3.13 installed successfully.")
+    print(f"\n  {py} installed successfully.")
 
 
-def _ensure_python313():
-    if sys.version_info >= (3, 13):
-        return  # already running 3.13+
+def _ensure_python():
+    if sys.version_info >= (_PY_MAJOR, _PY_MINOR):
+        return  # already running correct version
 
-    # Check if python3.13 is already available
-    py313 = shutil.which("python3.13")
+    py_bin = f"python{_PY_MAJOR}.{_PY_MINOR}"
+    found = shutil.which(py_bin)
 
-    if py313 is None and sys.platform != "win32":
-        _install_python313_linux()
-        py313 = shutil.which("python3.13")
+    if found is None and sys.platform != "win32":
+        _install_python_linux()
+        found = shutil.which(py_bin)
 
-    if py313:
-        print(f"\n  Restarting with Python 3.13 ({py313})...")
-        os.execv(py313, [py313] + sys.argv)
-        # execv replaces the current process — code below never runs
+    if found:
+        print(f"\n  Restarting with Python {_PY_MAJOR}.{_PY_MINOR} ({found})...")
+        os.execv(found, [found] + sys.argv)
 
-    # Windows or install failed
-    print(f"\n[ERROR] Python 3.13 or higher is required.")
+    # Fallback error
+    print(f"\n[ERROR] Python {_PY_MAJOR}.{_PY_MINOR} or higher is required.")
     print(f"        You are running Python {sys.version_info.major}.{sys.version_info.minor}.")
     if sys.platform == "win32":
-        print("\n  Download Python 3.13 from: https://www.python.org/downloads/")
+        print(f"\n  Download Python {_PY_MAJOR}.{_PY_MINOR} from: https://www.python.org/downloads/")
         print("  Make sure to check 'Add Python to PATH' during install.")
     sys.exit(1)
 
@@ -70,22 +73,19 @@ def main():
     print("  PolyMirror — Setup")
     print("=" * 50)
 
-    _ensure_python313()
+    _ensure_python()
 
-    # Python executable inside future venv
     if sys.platform == "win32":
         venv_python = VENV / "Scripts" / "python.exe"
     else:
         venv_python = VENV / "bin" / "python"
 
-    # 1. Create venv
     if not VENV.exists():
         print("\n[1/2] Creating virtual environment...")
         run([sys.executable, "-m", "venv", str(VENV)])
     else:
         print("\n[1/2] Virtual environment already exists, skipping.")
 
-    # 2. Install dependencies
     print("\n[2/2] Installing dependencies...")
     run([str(venv_python), "-m", "pip", "install", "--upgrade", "pip", "-q"])
     run([str(venv_python), "-m", "pip", "install", "-e", ".[live,dashboard]", "-q"])
