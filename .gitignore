@@ -2,17 +2,18 @@
 venv/
 .venv/
 
-# Database (contains real trading data)
+# Database (contains real trading data — created automatically on first run)
 data/*.sqlite
 data/*.db
 
-# Python cache
+# License cache (per-machine, generated on first valid activation)
+.license_cache
+
+# Python / build artifacts
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-
-# Environment (client fills this — not ignored, ships as template)
+copypoly.egg-info/
 
 # Logs
 *.log
