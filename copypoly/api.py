@@ -122,6 +122,17 @@ class PolymarketDataClient:
         )
         return _items(payload)
 
+    def portfolio_value(self, *, user: str) -> float | None:
+        """Return total open-position value from Polymarket's /value endpoint."""
+        try:
+            payload = self._get("/value", {"user": user})
+            items = _items(payload)
+            if items:
+                return float(items[0].get("value") or 0)
+        except Exception:
+            pass
+        return None
+
     def position(
         self,
         *,
