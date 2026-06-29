@@ -10,7 +10,7 @@ Automatically copy trades from any Polymarket wallet in real time. Configure eve
 
 ### Windows
 
-1. Install **Python 3.11+** from [python.org](https://www.python.org/downloads/) — check **"Add Python to PATH"** during install
+1. Install **Python 3.13+** from [python.org](https://www.python.org/downloads/) — check **"Add Python to PATH"** during install
 2. Download or clone this repository
 3. Open a terminal in the folder and run:
    ```
@@ -56,7 +56,7 @@ Everything is configured directly from the dashboard. No need to edit any files.
 
 ## Requirements
 
-- Python 3.11 or higher
+- Python 3.13 or higher
 - A funded Polymarket account (wallet-based, not email sign-up)
 - A valid PolyMirror license key
 

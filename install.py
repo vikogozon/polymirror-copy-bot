@@ -20,6 +20,21 @@ def main():
     print("  PolyMirror — Setup")
     print("=" * 50)
 
+    if sys.version_info < (3, 13):
+        print(f"\n[ERROR] Python 3.13 or higher is required.")
+        print(f"        You are running Python {sys.version_info.major}.{sys.version_info.minor}.")
+        if sys.platform != "win32":
+            print("\n  Install Python 3.13 on Linux/Mac:")
+            print("      sudo apt-get install -y software-properties-common")
+            print("      sudo add-apt-repository ppa:deadsnakes/ppa -y")
+            print("      sudo apt-get update -q")
+            print("      sudo apt-get install -y python3.13 python3.13-venv")
+            print("      python3.13 install.py")
+        else:
+            print("\n  Download Python 3.13 from: https://www.python.org/downloads/")
+            print("  Make sure to check 'Add Python to PATH' during install.")
+        sys.exit(1)
+
     # Python executable inside future venv
     if sys.platform == "win32":
         venv_python = VENV / "Scripts" / "python.exe"
