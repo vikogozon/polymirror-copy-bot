@@ -1,50 +1,103 @@
 # PolyMirror — Installation Guide
 
 ## Requirements
-- Python 3.10 or higher
-- A Polymarket account with funds
-- Your Polymarket API credentials
 
-## Setup (Windows)
+- Python 3.14 or higher
+- A funded Polymarket account (wallet-based login, not email)
+- A valid PolyMirror license key
 
+---
+
+## Step 1 — Install
+
+### Windows
 ```
-python -m venv venv
-venv\Scripts\activate
-pip install -e ".[live,dashboard]"
+python install.py
+```
+If Python 3.14 is not installed, download it from https://www.python.org/downloads/
+and make sure to check **"Add Python to PATH"** during install.
+
+### Linux / VPS
+```bash
+python3 install.py
+```
+If Python 3.14 is missing, the script installs it automatically.
+
+### Mac
+```bash
+python3 install.py
+```
+If Python 3.14 is missing, download it from https://www.python.org/downloads/
+
+---
+
+## Step 2 — Start
+
+### Windows
+```
+start.bat
+```
+Or double-click `start.bat` in File Explorer.
+
+### Linux / Mac
+```bash
+bash start.sh
 ```
 
-## Setup (Linux / VPS)
+---
 
+## Step 3 — Open the dashboard
+
+Go to **http://localhost:8080** in your browser.
+
+1. Enter your license key and click **ACTIVATE**
+2. Fill in your Polymarket credentials in the Configuration panel
+3. Enter the wallet address you want to copy
+4. Set your trade size
+5. Click **START BOT**
+
+---
+
+## Updating to a new version
+
+```bash
+git pull
+python3 install.py
 ```
-python3 -m venv venv
-source venv/bin/activate
-pip install -e ".[live,dashboard]"
-```
 
-## Configure .env
+Restart the bot. Your settings and credentials are preserved.
 
-Open the `.env` file and fill in your details:
+---
 
-```
-WATCHLIST_WALLETS=0x...   # wallet you want to copy
-CLOB_PRIVATE_KEY=0x...    # MetaMask -> Account Details -> Export Private Key
-CLOB_API_KEY=...          # polymarket.com -> Settings -> API Keys
-CLOB_FUNDER=0x...         # your 0x address on polymarket.com
-LICENSE_KEY=POLY-...      # provided by seller
-FIXED_TRADE_USDC=5.0      # USD amount per copied trade
-```
+## Useful commands
 
-## Run
+| What | Command |
+|---|---|
+| Close all open positions | `python close_all.py` |
+| Run in background (Linux) | `nohup bash start.sh > polymirror.log 2>&1 &` |
+| View background logs | `tail -f polymirror.log` |
+| Stop background bot | `kill $(cat polymirror.pid)` or find PID with `ps aux \| grep python` |
 
+---
+
+## Troubleshooting
+
+**Window closes immediately on Windows**
+An error occurred on startup. Re-run from a terminal to see the message:
 ```
 python run_dashboard.py
 ```
 
-Then open your browser at: http://localhost:8080
+**Port 8080 already in use**
+Another process is using the port. Find and stop it:
+```bash
+# Linux
+sudo lsof -i :8080
+# Windows
+netstat -ano | findstr :8080
+```
 
-Click START BOT when ready. The bot only copies trades that happen after you click START.
-
-## Notes
-- The data/ folder and database are created automatically on first run.
-- To close all open positions: python close_all.py
-- The bot requires an active internet connection at all times.
+**Bot not copying trades**
+- Make sure you clicked **START BOT** in the dashboard
+- The bot only copies trades that happen **after** you click START
+- Check the System Log panel for error messages
