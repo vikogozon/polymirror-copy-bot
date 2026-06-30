@@ -536,10 +536,11 @@ def _filled_message(decision: CopyDecision, response: Any = None) -> str:
             price = _response_float(response, "price") or decision.price
             if size_matched and price:
                 actual_usdc = round(size_matched * price, 2)
+    size = _response_float(response, "size_matched") or decision.size
     usdc = actual_usdc if actual_usdc > 0 else decision.usdc_size
     if decision.side == "BUY":
-        return f"matched market buy; spent ${usdc:.2f}"
-    return f"matched market sell; value ${usdc:.2f}"
+        return f"matched market buy; {size:.2f}sh; spent ${usdc:.2f}"
+    return f"matched market sell; {size:.2f}sh; value ${usdc:.2f}"
 
 
 def _response_success(response: Any) -> bool:
