@@ -11,6 +11,8 @@ from .models import CopyDecision, OrderResult, Trade, Trader
 from .risk import evaluate_trade
 from .state import BotState
 
+_tp_cooldown: dict[str, float] = {}
+
 
 LogFn = Callable[[str], None]
 
@@ -60,9 +62,84 @@ def run_forever(
     while True:
         started = time.time()
         run_once(config=config, client=client, state=state, executor=executor, log=log)
+        take_profit_scan(config=config, client=client, state=state, executor=executor, log=log)
         elapsed = time.time() - started
         sleep_for = max(0.05, config.poll_seconds - elapsed)
         time.sleep(sleep_for)
+
+
+def take_profit_scan(
+    *,
+    config: Config,
+    client: PolymarketDataClient,
+    state: BotState,
+    executor: PaperExecutor | LiveExecutor,
+    log: LogFn = print,
+    tp_pct: float | None = None,
+) -> None:
+    pct = tp_pct if tp_pct is not None else config.take_profit_pct
+    if pct <= 0:
+        return
+    if not config.clob_funder:
+        return
+
+    open_positions = [p for p in state.positions() if p.size > 0.01 and p.avg_price > 0]
+    if not open_positions:
+        return
+
+    try:
+        api_positions = client.positions(user=config.clob_funder, size_threshold=0.0)
+    except Exception:
+        return
+
+    price_map: dict[str, float] = {}
+    for ap in api_positions:
+        asset_id = str(ap.get("asset") or ap.get("assetId") or ap.get("tokenId") or "")
+        price = float(ap.get("curPrice") or ap.get("currentPrice") or 0)
+        if asset_id and price > 0:
+            price_map[asset_id] = price
+
+    now = time.time()
+    for pos in open_positions:
+        if now - _tp_cooldown.get(pos.asset, 0) < 30:
+            continue
+        current_price = price_map.get(pos.asset, 0.0)
+        if current_price <= 0:
+            continue
+        profit_pct = (current_price / pos.avg_price - 1) * 100
+        if profit_pct < pct:
+            continue
+
+        ts = int(now)
+        synthetic_trade = Trade(
+            trader_wallet=config.clob_funder,
+            side="SELL",
+            asset=pos.asset,
+            condition_id=pos.condition_id,
+            size=pos.size,
+            price=current_price,
+            timestamp=ts,
+            title=pos.title,
+            outcome=pos.outcome,
+            transaction_hash=f"tp_{pos.asset[:16]}_{ts}",
+        )
+        decision = CopyDecision(
+            should_copy=True,
+            reason=f"Take profit at +{profit_pct:.1f}%",
+            side="SELL",
+            asset=pos.asset,
+            price=current_price,
+            size=pos.size,
+            usdc_size=round(pos.size * current_price, 2),
+        )
+        _tp_cooldown[pos.asset] = now
+        result = executor.execute(synthetic_trade, decision)
+        label = pos.title[:50] if pos.title else pos.asset[:18]
+        log(
+            f"TAKE PROFIT: {label} "
+            f"sell {pos.size:.2f}sh @ {current_price:.3f} "
+            f"(+{profit_pct:.1f}%) -> {result.message}"
+        )
 
 
 def _scan_trader(

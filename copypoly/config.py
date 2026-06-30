@@ -102,6 +102,7 @@ class Config:
     clob_derive_api_key: bool
     clob_signature_type: int | None
     clob_funder: str
+    take_profit_pct: float
 
     @property
     def is_live(self) -> bool:
@@ -290,6 +291,7 @@ def load_config(env_files: Iterable[str | Path] = (".env",)) -> Config:
             "POLYMARKET_FUNDER",
             "POLYMARKET_DEPOSIT_WALLET",
         ).strip("'\""),
+        take_profit_pct=_float("TAKE_PROFIT_PCT", 0.0),
     )
     config.validate()
     return config
